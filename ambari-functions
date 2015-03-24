@@ -6,11 +6,12 @@ curl -Lo .amb j.mp/docker-ambari && . .amb
 full documentation: https://github.com/sequenceiq/docker-ambari
 USAGE
 
-: ${NODE_PREFIX=amb}
+: ${NODE_PREFIX=ambari}
 : ${AMBARI_SERVER_NAME:=${NODE_PREFIX}0}
-: ${MYDOMAIN:=mycorp.kom}
-: ${IMAGE:="sequenceiq/ambari:1.7.0"}
-: ${DOCKER_OPTS:="--dns 127.0.0.1 --entrypoint /usr/local/serf/bin/start-serf-agent.sh -e KEYCHAIN=$KEYCHAIN"}
+: ${MYDOMAIN:=aptible.local}
+: ${IMAGE:="sequenceiq/ambari:1.7.0-aptible"}
+: ${DOCKER_OPTS:="-m 2g --dns 127.0.0.1 --entrypoint /usr/local/serf/bin/start-serf-agent.sh -e KEYCHAIN=$KEYCHAIN"}
+: ${PORT_OPTS:="-p 50070 -p 50075 -p 8020 -p 50010 -p 50020 -p 50090 -p 8080 -p 7373 -p 7946"}
 : ${CLUSTER_SIZE:=3}
 : ${DEBUG:=1}
 : ${SLEEP_TIME:=2}
@@ -24,6 +25,12 @@ run-command() {
   else
     debug "[DRY_RUN]" "$CMD"
   fi
+}
+
+nth-mount() {
+  mnt="/mnt/xvdf"
+  for i in $(seq 0 $1); do mnt=$(ruby -e "puts '${mnt}'.next") ; done
+  echo $mnt
 }
 
 amb-clean() {
@@ -111,7 +118,8 @@ amb-deploy-cluster() {
 }
 
 amb-start-first() {
-  run-command docker run -d $DOCKER_OPTS --name $AMBARI_SERVER_NAME -h $AMBARI_SERVER_NAME.$MYDOMAIN $IMAGE --tag ambari-server=true
+  MOUNT=$(nth-mount 0)
+  run-command docker run $PORT_OPTS -v $MOUNT/hadoop:/hadoop -d $DOCKER_OPTS --name $AMBARI_SERVER_NAME -h $AMBARI_SERVER_NAME.$MYDOMAIN $IMAGE --tag ambari-server=true
 }
 
 amb-copy-to-hdfs() {
@@ -148,5 +156,6 @@ amb-start-node() {
     shift
     MORE_OPTIONS="$@"
   fi
-  run-command docker run $MORE_OPTIONS -e SERF_JOIN_IP=$AMBARI_SERVER_IP $DOCKER_OPTS --name ${NODE_PREFIX}$NUMBER -h ${NODE_PREFIX}${NUMBER}.$MYDOMAIN $IMAGE --log-level debug
+  MOUNT=$(nth-mount ${NUMBER})
+  run-command docker run $MORE_OPTIONS -v $MOUNT/hadoop:/hadoop -e SERF_JOIN_IP=$AMBARI_SERVER_IP $DOCKER_OPTS --name ${NODE_PREFIX}$NUMBER -h ${NODE_PREFIX}${NUMBER}.$MYDOMAIN $IMAGE --log-level debug -node ${NODE_PREFIX}${NUMBER}.$MYDOMAIN
 }

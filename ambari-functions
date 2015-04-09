@@ -157,5 +157,5 @@ amb-start-node() {
     MORE_OPTIONS="$@"
   fi
   MOUNT=$(nth-mount ${NUMBER})
-  run-command docker run $MORE_OPTIONS -v $MOUNT/hadoop:/hadoop -e SERF_JOIN_IP=$AMBARI_SERVER_IP $DOCKER_OPTS --name ${NODE_PREFIX}$NUMBER -h ${NODE_PREFIX}${NUMBER}.$MYDOMAIN $IMAGE --log-level debug -node ${NODE_PREFIX}${NUMBER}.$MYDOMAIN
+  run-command docker run $PORT_OPTS $MORE_OPTIONS -v $MOUNT/hadoop:/hadoop -e SERF_JOIN_IP=$AMBARI_SERVER_IP $DOCKER_OPTS --name ${NODE_PREFIX}$NUMBER -h ${NODE_PREFIX}${NUMBER}.$MYDOMAIN $IMAGE --log-level debug -node ${NODE_PREFIX}${NUMBER}.$MYDOMAIN
 }

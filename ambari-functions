@@ -11,7 +11,7 @@ USAGE
 : ${MYDOMAIN:=aptible.local}
 : ${IMAGE:="sequenceiq/ambari:1.7.0-aptible"}
 : ${DOCKER_OPTS:="-m 2g --dns 127.0.0.1 --entrypoint /usr/local/serf/bin/start-serf-agent.sh -e KEYCHAIN=$KEYCHAIN"}
-: ${PORT_OPTS:="-p 50070 -p 50075 -p 8020 -p 50010 -p 50020 -p 50090 -p 8080 -p 7373 -p 7946"}
+: ${PORT_OPTS:="-p 50070 -p 50075 -p 8020 -p 50010 -p 50020 -p 50090 -p 8080 -p 7373 -p 7946 -p 8088 -p 8032 -p 50060"}
 : ${CLUSTER_SIZE:=3}
 : ${DEBUG:=1}
 : ${SLEEP_TIME:=2}

@@ -11,11 +11,37 @@ USAGE
 : ${MYDOMAIN:=aptible.local}
 : ${IMAGE:="sequenceiq/ambari:1.7.0-aptible"}
 : ${DOCKER_OPTS:="--dns 127.0.0.1 --entrypoint /usr/local/serf/bin/start-serf-agent.sh -e KEYCHAIN=$KEYCHAIN"}
-: ${PORT_OPTS:="-p 50070 -p 50075 -p 8020 -p 50010 -p 50020 -p 50090 -p 8080 -p 7373 -p 7946 -p 8088 -p 8032 -p 50060"}
 : ${CLUSTER_SIZE:=3}
 : ${DEBUG:=1}
 : ${SLEEP_TIME:=2}
 : ${DRY_RUN:=false}
+
+# 50070: NameNode WebUI (HTTP)
+# 8020: NameNode Metadata (IPC)
+: ${NAMENODE_PORT_OPTS:="-p 50070 -p 8020"}
+
+# 50075: DataNode WebUI (HTTP)
+# 50010: DataNode (IPC)
+: ${DATANODE_PORT_OPTS:="-p 50075 -p 50010"}
+
+# 19888: Job History WebUI (HTTP)
+# 10020: Job History (IPC)
+: ${MAPRED_PORT_OPTS:="-p 19888 -p 10020"}
+
+# 8088: YARN Resource Manager Webapp (HTTP)
+# 8025: YARN Resource Manager Scheduler (IPC)
+# 8030: YARN Resource Manager Tracker (IPC)
+# 8050: YARN Resource Manager (IPC)
+# 8141: YARN Resource Manager Admin (IPC)
+# 8188: YARN Timeline Webapp (HTTP)
+# 10200: YARN Timeline Service (IPC)
+# 45454: YARN Node Manager
+: ${YARN_PORT_OPTS:="-p 8088 -p 8025 -p 8030 -p 8050 -p 8141 -p 8188 -p 10200 -p 45454"}
+
+# 8080: Ambari WebUI (HTTP)
+: ${AMBARI_PORT_OPTS:="-p 8080"}
+
+: ${SERF_PORT_OPTS:="-p 7373 -p 7946"}
 
 run-command() {
   CMD="$@"
@@ -119,7 +145,7 @@ amb-deploy-cluster() {
 
 amb-start-first() {
   MOUNT=$(nth-mount 0)
-  run-command docker run -m 4g $PORT_OPTS -v $MOUNT/hadoop:/hadoop -d $DOCKER_OPTS --name $AMBARI_SERVER_NAME -h $AMBARI_SERVER_NAME.$MYDOMAIN $IMAGE --tag ambari-server=true
+  run-command docker run -m 4g $NAMENODE_PORT_OPTS $DATANODE_PORT_OPTS $MAPRED_PORT_OPTS $YARN_PORT_OPTS $AMBARI_PORT_OPTS -v $MOUNT/hadoop:/hadoop -d $DOCKER_OPTS --name $AMBARI_SERVER_NAME -h $AMBARI_SERVER_NAME.$MYDOMAIN $IMAGE --tag ambari-server=true
 }
 
 amb-copy-to-hdfs() {
@@ -157,5 +183,5 @@ amb-start-node() {
     MORE_OPTIONS="$@"
   fi
   MOUNT=$(nth-mount ${NUMBER})
-  run-command docker run -m 2g $PORT_OPTS $MORE_OPTIONS -v $MOUNT/hadoop:/hadoop -e SERF_JOIN_IP=$AMBARI_SERVER_IP $DOCKER_OPTS --name ${NODE_PREFIX}$NUMBER -h ${NODE_PREFIX}${NUMBER}.$MYDOMAIN $IMAGE --log-level debug -node ${NODE_PREFIX}${NUMBER}.$MYDOMAIN
+  run-command docker run -m 2g $DATANODE_PORT_OPTS $MORE_OPTIONS -v $MOUNT/hadoop:/hadoop -e SERF_JOIN_IP=$AMBARI_SERVER_IP $DOCKER_OPTS --name ${NODE_PREFIX}$NUMBER -h ${NODE_PREFIX}${NUMBER}.$MYDOMAIN $IMAGE --log-level debug -node ${NODE_PREFIX}${NUMBER}.$MYDOMAIN
 }
